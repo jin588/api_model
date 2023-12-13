@@ -2,7 +2,6 @@ import json
 from flask import Flask, request, jsonify
 import sqlite3
 import os
-from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
 
