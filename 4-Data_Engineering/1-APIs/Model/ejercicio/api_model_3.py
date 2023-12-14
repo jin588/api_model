@@ -13,29 +13,27 @@ app.config['DEBUG'] = True
 def hello():
     return "Bienvenido a mi API del modelo advertising"
 
-
-@app.route('/v2/predict', methods=['GET'])
+@app.route('/predict', methods=['GET'])
 def predict():
     model = pickle.load(open('data/advertising_model','rb'))
 
-    tv = request.args.get('tv', None)
-    radio = request.args.get('radio', None)
-    newspaper = request.args.get('newspaper', None)
+    data = request.get_json().get('data', None)
 
-    if tv is None or radio is None or newspaper is None:
+    if data is None:
         return "Faltan argumentos"
     else:
-        prediction = model.predict([[int(tv),int(radio),int(newspaper)]])
-        return "La predicción de ventas invirtiendo esa cantidad de dinero en TV, radio y periódico es: " + str(round(prediction[0],2)) + 'k €'
-
-@app.route('/v2/ingest_data', methods=['POST'])
+        tv, radio, newspaper = data[0]
+        prediction = model.predict([[float(tv),float(radio),float(newspaper)]])
+        return jsonify({"prediction": str(round(prediction[0],2)) + 'k €'})
+    
+@app.route('/ingest', methods=['POST'])
 def ingest_data():
-    tv = request.args.get('tv', None)
-    radio = request.args.get('radio', None)
-    newpaper = request.args.get('newpaper', None)
-    sales = request.args.get('sales', None)
+    tv = request.args.get('tv', 0)
+    radio = request.args.get('radio', 0)
+    newpaper = request.args.get('newpaper', 0)
+    sales = request.args.get('sales', 0)
    
-    connection = sqlite3.connect('ejercicio.db')
+    connection = sqlite3.connect('ejercicio4.db')
     cursor = connection.cursor()
 
     cursor.execute('''
@@ -46,11 +44,11 @@ def ingest_data():
     connection.commit()
     connection.close()
 
-    return jsonify({'message': 'Datos guardados correctamente.'}), 201
+    return jsonify({'message': 'Datos ingresados correctamente'}), 200
 
-@app.route('/v2/retrain', methods=['GET'])
+@app.route('/retrain', methods=['POST'])
 def retrain_model():
-    connection = sqlite3.connect('ejercicio.db')
+    connection = sqlite3.connect('ejercicio4.db')
 
     query = 'SELECT TV, radio, newpaper, sales FROM Advertising'
     data = pd.read_sql_query(query, connection)
